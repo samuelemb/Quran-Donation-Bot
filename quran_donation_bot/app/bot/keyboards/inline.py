@@ -72,3 +72,16 @@ def settings_payment_methods_keyboard(payment_methods: list[PaymentMethod]) -> I
         for method in payment_methods
     ]
     return InlineKeyboardMarkup(buttons)
+
+
+def donate_now_keyboard(subscription_id: int, language: str = "en") -> InlineKeyboardMarkup:
+    label = (
+        "Donate Now"
+        if language == "en"
+        else "تبرع الآن"
+        if language == "ar"
+        else "አሁን ለመሰደቅ"
+    )
+    return InlineKeyboardMarkup(
+        [[InlineKeyboardButton(label, callback_data=f"subscription:donate:{subscription_id}")]]
+    )

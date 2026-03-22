@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from telegram import Bot
 from telegram.error import TelegramError
 
+from quran_donation_bot.app.bot.keyboards.inline import donate_now_keyboard
 from quran_donation_bot.app.core.config import get_settings
 from quran_donation_bot.app.core.constants import DonationPlanType
 from quran_donation_bot.app.core.constants import NotificationDeliveryStatus
@@ -161,6 +162,7 @@ class NotificationService:
             user_telegram_id=subscription.user.telegram_id,
             notification_type=f"subscription_reminder:{subscription.id}:{reminder_key}",
             message=message,
+            reply_markup=donate_now_keyboard(subscription.id, language),
         )
 
     @staticmethod
@@ -175,6 +177,7 @@ class NotificationService:
         user_telegram_id: int,
         notification_type: str,
         message: str,
+        reply_markup=None,
     ) -> NotificationResult:
         existing = self.logs.get_by_user_donation_type(
             user_id=user_id,
@@ -195,7 +198,11 @@ class NotificationService:
             notification_type=notification_type,
         )
         try:
-            telegram_message = await self.bot.send_message(chat_id=user_telegram_id, text=message)
+            telegram_message = await self.bot.send_message(
+                chat_id=user_telegram_id,
+                text=message,
+                reply_markup=reply_markup,
+            )
             self.logs.mark_sent(log, message_id=telegram_message.message_id)
             self.session.commit()
             logger.info("Sent %s notification to telegram_id=%s donation_id=%s", notification_type, user_telegram_id, donation_id)

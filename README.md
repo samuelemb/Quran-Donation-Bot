@@ -20,10 +20,30 @@ Production-ready v1 backend for a Telegram donation bot plus a shared FastAPI ba
 - FastAPI admin-facing routes
 - PostgreSQL models and Alembic migration
 - Payment-method seed script
-- Notification hooks for approval/rejection
+- Notification hooks for approval/rejection and subscription reminders
 - Dockerfile and docker-compose
 - Health/readiness endpoints
 - Automated tests for services, API, and bot flows
+
+## Donation flows
+
+### New donor flow
+
+1. User starts the bot and chooses a language.
+2. User selects a donation plan: one-time, monthly, or 3-month.
+3. User enters how many Qurans they want to donate.
+4. User selects a payment method.
+5. The bot shows the payment amount and account details.
+6. User sends a payment screenshot.
+7. The donation is stored as `pending` until an admin approves or rejects it.
+
+### Returning subscription donor flow
+
+1. After a monthly or 3-month donation is approved, the bot stores a subscription with the donor's saved Quran amount and payment method.
+2. The scheduler sends reminder messages before the next payment due date.
+3. Each reminder includes a `Donate Now` button.
+4. When the donor taps `Donate Now`, the bot shows the saved amount and saved payment method, then asks for a fresh payment screenshot.
+5. The new payment is submitted for review as another pending donation.
 
 ## Environment
 
@@ -102,7 +122,8 @@ python -m quran_donation_bot.app.scripts.seed_payment_methods
 
 1. User submits donation screenshot in Telegram.
 2. Donation is stored with `pending` status and payment snapshot fields.
-3. Admin portal or backend calls:
+3. If the donation plan is recurring and the donation is approved, the backend creates or updates a subscription record for future reminders.
+4. Admin portal or backend calls:
 
 ```http
 PATCH /api/v1/donations/1/approve
@@ -115,7 +136,8 @@ Content-Type: application/json
 }
 ```
 
-4. The backend updates the donation and sends the Telegram approval message.
+5. The backend updates the donation and sends the Telegram approval message.
+6. For recurring plans, later reminder messages include a `Donate Now` button that takes the donor straight to the saved payment instructions and screenshot step.
 
 ## Tests
 

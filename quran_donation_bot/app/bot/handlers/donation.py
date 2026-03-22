@@ -13,6 +13,7 @@ from quran_donation_bot.app.core.constants import (
     DonationPlanType,
     MenuButtons,
 )
+from quran_donation_bot.app.db.repositories.subscriptions import SubscriptionRepository
 from quran_donation_bot.app.schemas.donation import DonationCreate
 from quran_donation_bot.app.services.donation_service import DonationService
 from quran_donation_bot.app.services.portal_settings_cache import PortalSettingsCache
@@ -190,6 +191,75 @@ async def payment_method_selected(update: Update, context: ContextTypes.DEFAULT_
     return DONATION_SCREENSHOT
 
 
+async def donation_now_from_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    query = update.callback_query
+    if query is None or update.effective_user is None:
+        return ConversationHandler.END
+
+    await query.answer()
+    language = get_user_language(context, update.effective_user.id)
+    subscription_id = int((query.data or "").split(":")[-1])
+
+    with context.application.bot_data["session_factory"]() as session:
+        subscription = SubscriptionRepository(session).get_by_id(subscription_id)
+
+    if (
+        subscription is None
+        or subscription.user is None
+        or subscription.user.telegram_id != update.effective_user.id
+        or subscription.payment_method is None
+        or not subscription.payment_method.is_active
+    ):
+        await query.edit_message_text(
+            "Your saved subscription payment details are unavailable. Please start a normal donation."
+            if language == "en"
+            else "بيانات الدفع المحفوظة لاشتراكك غير متاحة. يرجى بدء تبرع عادي."
+            if language == "ar"
+            else "የተቀመጠው የደንበኝነት ክፍያ መረጃ አይገኝም። እባክዎ መደበኛ ልገሳ ይጀምሩ።"
+        )
+        return ConversationHandler.END
+
+    payment_method = subscription.payment_method
+    total_amount = int(subscription.monthly_amount)
+    context.user_data["donation_plan_type"] = subscription.plan_type
+    context.user_data["donation_quran_amount"] = subscription.quran_amount
+    context.user_data["donation_total_amount"] = total_amount
+    context.user_data["payment_method_id"] = payment_method.id
+    context.user_data["payment_method_snapshot"] = {
+        "name": payment_method.name,
+        "provider_type": payment_method.provider_type,
+        "account_name": payment_method.account_name,
+        "account_number": payment_method.account_number,
+        "instructions": payment_method.instructions,
+    }
+
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+
+    if update.effective_chat is not None:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=payment_instruction_message(
+                amount=total_amount,
+                payment_name=payment_method.name,
+                account_name=payment_method.account_name,
+                account_number=payment_method.account_number,
+                instructions=payment_method.instructions,
+                language=language,
+            ),
+            parse_mode=ParseMode.HTML,
+        )
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=t("donation_send_screenshot", language),
+            reply_markup=cancel_keyboard(language),
+        )
+
+    return DONATION_SCREENSHOT
+
+
 async def donation_waiting_for_payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if update.message is None:
         return DONATION_PAYMENT_METHOD
@@ -284,7 +354,10 @@ async def donation_waiting_for_screenshot(update: Update, context: ContextTypes.
 
 def get_handler():
     return ConversationHandler(
-        entry_points=[MessageHandler(filters.Regex(menu_pattern("donate")), donation_start)],
+        entry_points=[
+            MessageHandler(filters.Regex(menu_pattern("donate")), donation_start),
+            CallbackQueryHandler(donation_now_from_subscription, pattern=r"^subscription:donate:\d+$"),
+        ],
         states={
             DONATION_PLAN: [
                 CallbackQueryHandler(donation_plan_selected, pattern=r"^plan:"),
