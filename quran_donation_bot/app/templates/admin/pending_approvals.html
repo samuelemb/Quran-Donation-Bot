@@ -1,0 +1,67 @@
+﻿{% extends "admin/base.html" %}
+
+{% block content %}
+<section class="hero hero-inline">
+    <div>
+        <h2>Review Submissions</h2>
+        <p>Verify donation screenshots and payment details from recent community contributors.</p>
+    </div>
+    <div class="pill pill-warning">{{ pending_donations|length }} New Submissions</div>
+</section>
+
+<section class="panel">
+    <div class="panel-header actions-right">
+        <a class="btn btn-secondary" href="/admin/pending-approvals">Refresh List</a>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>User Name</th>
+                    <th>Telegram</th>
+                    <th>Qurans</th>
+                    <th>Amount</th>
+                    <th>Payment</th>
+                    <th>Screenshot</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for donation in pending_donations %}
+                <tr>
+                    <td>{{ donation.user.first_name }}</td>
+                    <td>@{{ donation.user.username or 'unknown_user' }}</td>
+                    <td>{{ donation.quran_amount }}</td>
+                    <td><strong>{{ "{:,.0f}".format(donation.total_amount) }} Birr</strong></td>
+                    <td><span class="pill">{{ donation.payment_method_name_snapshot }}</span></td>
+                    <td><a class="inline-link" href="/admin/pending-approvals/{{ donation.id }}/screenshot" target="_blank">View Receipt</a></td>
+                    <td>{{ donation.created_at.strftime("%Y-%m-%d") }}</td>
+                    <td>
+                        <div class="row-actions">
+                            <form method="post" action="/admin/pending-approvals/{{ donation.id }}/approve">
+                                <button class="btn btn-success btn-sm" type="submit">Approve</button>
+                            </form>
+                            <form method="post" action="/admin/pending-approvals/{{ donation.id }}/reject">
+                                <input type="hidden" name="reason" value="Receipt rejected in admin portal">
+                                <button class="btn btn-danger btn-sm" type="submit">Reject</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="empty-state">No pending donations right now.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="tip-box">
+    <strong>Verification Tip</strong>
+    <p>Always cross-check the receipt details before approving a donation. Approved donations are immediately reflected across the shared platform data.</p>
+</section>
+{% endblock %}
+

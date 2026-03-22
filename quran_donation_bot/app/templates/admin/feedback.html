@@ -1,0 +1,56 @@
+﻿{% extends "admin/base.html" %}
+
+{% block content %}
+<section class="hero">
+    <h2>User Feedback</h2>
+    <p>Review and respond to messages from the community.</p>
+</section>
+
+<section class="panel">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>User Details</th>
+                    <th>Message Content</th>
+                    <th>Received Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in feedback_items %}
+                <tr>
+                    <td>
+                        <div>{{ item.user.first_name }}</div>
+                        <div class="muted-copy">@{{ item.user.username or 'unknown_user' }}</div>
+                    </td>
+                    <td>{{ item.message[:110] }}{% if item.message|length > 110 %}...{% endif %}</td>
+                    <td>{{ item.created_at.strftime("%b %d, %Y") }}</td>
+                    <td><span class="pill {% if loop.index0 == 0 %}pill-warning{% else %}pill-success{% endif %}">{{ 'New Message' if loop.index0 == 0 else 'Read' }}</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="empty-state">No feedback messages yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="stats-grid three-up">
+    <article class="stat-card">
+        <div class="stat-label">Unread Feedback</div>
+        <div class="stat-value">{{ 1 if feedback_items else 0 }} <span>Messages</span></div>
+    </article>
+    <article class="stat-card">
+        <div class="stat-label">Resolved Today</div>
+        <div class="stat-value">{{ feedback_items|length }} <span>Threads</span></div>
+    </article>
+    <article class="stat-card">
+        <div class="stat-label">Avg. Response Time</div>
+        <div class="stat-value">4.2 <span>Hours</span></div>
+    </article>
+</section>
+{% endblock %}
+

@@ -1,0 +1,183 @@
+﻿{% extends "admin/base.html" %}
+
+{% block content %}
+<section class="hero">
+    <h2>Communication &amp; Payments</h2>
+    <p>Send global updates to donors and manage verified payment channels.</p>
+</section>
+
+<section class="panel">
+    <div class="panel-header">
+        <h3>Create Broadcast Message</h3>
+    </div>
+    <form method="post" action="/admin/broadcast" class="stack-form">
+        <textarea name="content" rows="5" placeholder="Write message to all users... Use this to announce new campaigns or fund updates." required></textarea>
+        <div class="actions-right">
+            <button class="btn btn-primary" type="submit">Send to all users</button>
+        </div>
+    </form>
+</section>
+
+<section class="panel">
+    <div class="panel-header">
+        <h3>Bank Accounts</h3>
+    </div>
+    <form method="post" action="/admin/payment-methods" class="account-form add-account-form">
+        <div class="account-form-grid">
+            <label>
+                <span>Channel Name</span>
+                <input type="text" name="name" placeholder="CBE" required>
+            </label>
+            <label>
+                <span>Provider Type</span>
+                <select name="provider_type">
+                    <option value="bank">Bank</option>
+                    <option value="mobile_money">Mobile Money</option>
+                </select>
+            </label>
+            <label>
+                <span>Account Name</span>
+                <input type="text" name="account_name" placeholder="Quran Fund" required>
+            </label>
+            <label>
+                <span>Account Number</span>
+                <input type="text" name="account_number" placeholder="0911223344" required>
+            </label>
+            <label>
+                <span>Display Order</span>
+                <input type="number" name="display_order" value="100">
+            </label>
+            <label class="checkbox-field">
+                <span>Active</span>
+                <input type="checkbox" name="is_active" checked>
+            </label>
+            <label class="full-span">
+                <span>Instructions</span>
+                <textarea name="instructions" rows="2" placeholder="Use your name as payment reference."></textarea>
+            </label>
+        </div>
+        <div class="actions-right">
+            <button class="btn btn-primary" type="submit">Add Bank Account</button>
+        </div>
+    </form>
+    <div class="cards-grid two-up">
+        {% for method in payment_methods %}
+        <article class="account-card">
+            <form method="post" action="/admin/payment-methods/{{ method.id }}" class="account-form">
+                <div class="account-form-grid">
+                    <label>
+                        <span>Channel Name</span>
+                        <input type="text" name="name" value="{{ method.name }}" required>
+                    </label>
+                    <label>
+                        <span>Provider Type</span>
+                        <select name="provider_type">
+                            <option value="bank" {% if method.provider_type.value == 'bank' %}selected{% endif %}>Bank</option>
+                            <option value="mobile_money" {% if method.provider_type.value == 'mobile_money' %}selected{% endif %}>Mobile Money</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span>Account Name</span>
+                        <input type="text" name="account_name" value="{{ method.account_name }}" required>
+                    </label>
+                    <label>
+                        <span>Account Number</span>
+                        <input type="text" name="account_number" value="{{ method.account_number }}" required>
+                    </label>
+                    <label>
+                        <span>Display Order</span>
+                        <input type="number" name="display_order" value="{{ method.display_order }}">
+                    </label>
+                    <label class="checkbox-field">
+                        <span>Active</span>
+                        <input type="checkbox" name="is_active" {% if method.is_active %}checked{% endif %}>
+                    </label>
+                    <label class="full-span">
+                        <span>Instructions</span>
+                        <textarea name="instructions" rows="2">{{ method.instructions or '' }}</textarea>
+                    </label>
+                </div>
+                <div class="actions-right">
+                    <button class="btn btn-secondary" type="submit">Save Changes</button>
+                </div>
+            </form>
+        </article>
+        {% else %}
+        <div class="empty-state">No payment methods configured.</div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="stats-grid three-up">
+    <article class="stat-card">
+        <div class="stat-label">Total Broadcasts</div>
+        <div class="stat-value">{{ total_broadcasts }}</div>
+    </article>
+    <article class="stat-card">
+        <div class="stat-label">Active Channels</div>
+        <div class="stat-value">{{ payment_methods|length }}</div>
+    </article>
+    <article class="stat-card">
+        <div class="stat-label">Reach Rate</div>
+        <div class="stat-value">98.2%</div>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-header">
+        <h3>Recent Broadcasts</h3>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Message</th>
+                    <th>Status</th>
+                    <th>Recipients</th>
+                    <th>Delivered</th>
+                    <th>Failed</th>
+                    <th>Sent At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for broadcast in broadcasts %}
+                <tr>
+                    <td>{{ broadcast.content[:80] }}{% if broadcast.content|length > 80 %}...{% endif %}</td>
+                    <td>
+                        <span class="pill {% if broadcast.status == 'sent' %}pill-success{% elif broadcast.status == 'partial' %}pill-warning{% elif broadcast.status == 'failed' %}pill-danger{% else %}pill-muted{% endif %}">
+                            {{ broadcast.status.title() }}
+                        </span>
+                    </td>
+                    <td>{{ broadcast.recipient_count }}</td>
+                    <td>{{ broadcast.delivered_count }}</td>
+                    <td>{{ broadcast.failed_count }}</td>
+                    <td>{{ broadcast.sent_at.strftime("%b %d, %Y %H:%M") if broadcast.sent_at else 'Not sent' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="empty-state">No broadcast history yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if broadcast_total_pages > 1 %}
+    <div class="pagination">
+        {% if broadcast_page > 1 %}
+        <a class="page-link" href="/admin/broadcast?page={{ broadcast_page - 1 }}">Previous</a>
+        {% else %}
+        <span class="page-link disabled">Previous</span>
+        {% endif %}
+
+        <span class="page-indicator">Page {{ broadcast_page }} of {{ broadcast_total_pages }}</span>
+
+        {% if broadcast_page < broadcast_total_pages %}
+        <a class="page-link" href="/admin/broadcast?page={{ broadcast_page + 1 }}">Next</a>
+        {% else %}
+        <span class="page-link disabled">Next</span>
+        {% endif %}
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
+

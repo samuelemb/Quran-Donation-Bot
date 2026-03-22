@@ -1,0 +1,100 @@
+﻿{% extends "admin/base.html" %}
+
+{% block content %}
+<section class="hero">
+    <h2>Settings</h2>
+    <p>Manage your organization and system preferences.</p>
+</section>
+
+<form method="post" action="/admin/settings/general" class="stack-layout">
+    <section class="panel">
+        <div class="panel-header"><h3>General Settings</h3></div>
+        <div class="form-grid two-up">
+            <label>
+                <span>Support Contact</span>
+                <input type="text" name="support_contact" value="{{ settings_model.support_contact }}">
+            </label>
+            <label>
+                <span>Telegram Channel Link</span>
+                <input type="text" name="telegram_channel_link" value="{{ settings_model.telegram_channel_link or '' }}">
+            </label>
+            <label>
+                <span>Default Language</span>
+                <select name="default_language">
+                    {% for language in language_options %}
+                    <option value="{{ language }}" {% if settings_model.default_language == language %}selected{% endif %}>{{ language }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>System Timezone</span>
+                <select name="system_timezone">
+                    {% for timezone in timezone_options %}
+                    <option value="{{ timezone }}" {% if settings_model.system_timezone == timezone %}selected{% endif %}>{{ timezone }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header"><h3>Donation Settings</h3></div>
+        <div class="form-grid two-up">
+            <label>
+                <span>Price per Quran (Birr)</span>
+                <input type="number" name="price_per_quran_birr" value="{{ settings_model.price_per_quran_birr }}">
+            </label>
+            <label class="full-span">
+                <span>Quran Price Note</span>
+                <input type="text" value="This price is used directly in the bot donation flow and welcome message." readonly>
+            </label>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header"><h3>Notification Settings</h3></div>
+        <div class="checkbox-list">
+            <label><input type="checkbox" name="notify_new_donations" {% if settings_model.notify_new_donations %}checked{% endif %}> Telegram notifications for new donations</label>
+            <label><input type="checkbox" name="notify_late_payments" {% if settings_model.notify_late_payments %}checked{% endif %}> Notifications for late payments</label>
+            <label><input type="checkbox" name="notify_pending_approvals" {% if settings_model.notify_pending_approvals %}checked{% endif %}> Admin alerts for pending approvals</label>
+        </div>
+    </section>
+
+    <div class="actions-right">
+        <button class="btn btn-primary" type="submit">Save All Changes</button>
+    </div>
+</form>
+
+<section class="panel">
+    <div class="panel-header"><h3>Admin Management</h3></div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Admin Name</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for admin in admin_rows %}
+                <tr>
+                    <td>{{ admin.full_name }} <div class="muted-copy">{{ admin.email }}</div></td>
+                    <td><span class="pill pill-muted">{{ admin.role.replace('_', ' ').title() }}</span></td>
+                    <td><span class="pill {% if admin.is_active %}pill-success{% else %}pill-danger{% endif %}">{{ 'Active' if admin.is_active else 'Disabled' }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-header"><h3>Security Settings</h3></div>
+    <form method="post" action="/admin/settings/password" class="password-form">
+        <input type="password" name="new_password" placeholder="Enter new password" required>
+        <button class="btn btn-dark" type="submit">Update Password</button>
+    </form>
+</section>
+{% endblock %}
+

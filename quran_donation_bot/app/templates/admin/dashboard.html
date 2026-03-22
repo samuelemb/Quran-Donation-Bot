@@ -1,0 +1,55 @@
+﻿{% extends "admin/base.html" %}
+
+{% block content %}
+<section class="hero">
+    <h2>Assalamu Alaikum, {{ current_admin.full_name.split(' ')[0] if current_admin else 'Admin' }}!</h2>
+    <p>Here is what is happening with the Quran donation project today.</p>
+</section>
+
+<section class="stats-grid three-up">
+    <article class="stat-card">
+        <div class="stat-label">Total Donors</div>
+        <div class="stat-value">{{ "{:,.0f}".format(dashboard.total_donors) }}</div>
+    </article>
+    <article class="stat-card">
+        <div class="stat-label">Active Subscribers</div>
+        <div class="stat-value">{{ "{:,.0f}".format(dashboard.active_subscribers) }}</div>
+    </article>
+    <article class="stat-card">
+        <div class="stat-label">Total Qurans Donated</div>
+        <div class="stat-value">{{ "{:,.0f}".format(dashboard.total_qurans) }}</div>
+    </article>
+    <article class="stat-card">
+        <div class="stat-label">Total Money Collected</div>
+        <div class="stat-value">{{ "{:,.0f}".format(dashboard.total_money) }} <span>Birr</span></div>
+    </article>
+    <article class="stat-card stat-alert amber">
+        <div class="stat-label">Pending Approvals</div>
+        <div class="stat-value">{{ dashboard.pending_count }}</div>
+        <a class="inline-link" href="/admin/pending-approvals">Review now</a>
+    </article>
+    <article class="stat-card stat-alert rose">
+        <div class="stat-label">Late Payments</div>
+        <div class="stat-value">{{ dashboard.late_count }}</div>
+        <div class="muted-copy">Subscribers overdue based on the latest approved donation.</div>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-header">
+        <div>
+            <h3>Donations per Month</h3>
+            <p>Steady upward growth in community contributions.</p>
+        </div>
+    </div>
+    <div class="chart-bars">
+        {% for item in dashboard.monthly_series %}
+        <div class="chart-bar-wrap">
+            <div class="chart-bar" style="height: {{ item.height }}px;"></div>
+            <div class="chart-label">{{ item.label }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
+

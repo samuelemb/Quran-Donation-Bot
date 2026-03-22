@@ -1,0 +1,77 @@
+﻿{% extends "admin/base.html" %}
+
+{% block content %}
+<section class="hero">
+    <h2>Subscribers &amp; Payments</h2>
+    <p>Track active donors and detect overdue payment cycles.</p>
+</section>
+
+<section class="panel">
+    <div class="panel-header">
+        <h3>Active Subscribers <span class="pill pill-success">{{ subscriber_rows|length }} Total</span></h3>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Qurans Subscribed</th>
+                    <th>Monthly Amount</th>
+                    <th>Payment Method</th>
+                    <th>Next Payment Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in subscriber_rows %}
+                <tr>
+                    <td>{{ row.user.first_name }} {% if row.user.username %}<span class="muted-copy">@{{ row.user.username }}</span>{% endif %}</td>
+                    <td>{{ row.qurans_subscribed }}</td>
+                    <td><strong>{{ "{:,.0f}".format(row.monthly_amount) }} Birr</strong></td>
+                    <td>{{ row.payment_method }}</td>
+                    <td>{{ row.next_payment_date.strftime("%b %d, %Y") if row.next_payment_date else 'Not available' }}</td>
+                    <td><span class="pill {% if row.status == 'Active' %}pill-success{% else %}pill-muted{% endif %}">{{ row.status }}</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="empty-state">No subscribers found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-header">
+        <h3>Late Payments <span class="pill pill-danger">{{ late_rows|length }} Pending</span></h3>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Amount</th>
+                    <th>Due Date</th>
+                    <th>Days Overdue</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in late_rows %}
+                <tr>
+                    <td>{{ row.user.first_name }} {% if row.user.username %}<span class="muted-copy">@{{ row.user.username }}</span>{% endif %}</td>
+                    <td><strong>{{ "{:,.0f}".format(row.monthly_amount) }} Birr</strong></td>
+                    <td>{{ row.next_payment_date.strftime("%b %d, %Y") }}</td>
+                    <td class="danger-text">{{ row.days_overdue }} days overdue</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="empty-state">No late payments detected.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+

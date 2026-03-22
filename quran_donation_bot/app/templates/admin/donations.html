@@ -1,0 +1,57 @@
+﻿{% extends "admin/base.html" %}
+
+{% block content %}
+<section class="hero">
+    <h2>Donations History</h2>
+    <p>View verified, processing, and rejected donations across the platform.</p>
+</section>
+
+<section class="stats-grid two-up">
+    <article class="stat-card">
+        <div class="stat-label">Total Donations This Month</div>
+        <div class="stat-value">{{ "{:,.0f}".format(donation_total_month) }} <span>Birr</span></div>
+    </article>
+    <article class="stat-card">
+        <div class="stat-label">Average Donation Amount</div>
+        <div class="stat-value">{{ "{:,.0f}".format(donation_average) }} <span>Birr</span></div>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Donor Name</th>
+                    <th>Amount</th>
+                    <th>Qurans</th>
+                    <th>Payment Method</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for donation in donation_rows %}
+                <tr>
+                    <td>{{ donation.user.first_name }}</td>
+                    <td><strong>{{ "{:,.0f}".format(donation.total_amount) }} Birr</strong></td>
+                    <td>{{ donation.quran_amount }}</td>
+                    <td>{{ donation.payment_method_name_snapshot }}</td>
+                    <td>{{ donation.created_at.strftime("%b %d, %Y") }}</td>
+                    <td>
+                        <span class="pill {% if donation.status.value == 'approved' %}pill-success{% elif donation.status.value == 'pending' %}pill-warning{% else %}pill-danger{% endif %}">
+                            {{ donation.status.value.title() }}
+                        </span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="empty-state">No donations available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+
